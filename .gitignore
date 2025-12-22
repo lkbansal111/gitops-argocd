@@ -3,3 +3,4 @@ logs/
 .env
 GitOps_ArgoCD.egg-info/
 results/
+__pycache__/
