@@ -16,7 +16,7 @@ pipeline {
             steps {
                 script {
                     echo 'Building Docker image...'
-                    dockerImage = docker.build("${DOCKER_HUB_REPO}:v1")
+                    def dockerImage = docker.build("${DOCKER_HUB_REPO}:v1")
                 }
             }
         }
@@ -67,17 +67,18 @@ pipeline {
                 '''
             }
         }
-        stage('Apply Kubernetes & Sync App with ArgoCD') {
-            steps {
-                script {
-                    kubeconfig(credentialsId: 'kubeconfig', serverUrl: 'https://127.0.0.1:50634') {
-                        sh '''
-                        argocd login 127.0.0.1:50745 --username admin --password $(kubectl get secret -n argocd argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d) --insecure
-                        argocd app sync gitops-argocd
-                        '''
-                    }
-                }
+       stage('Apply Kubernetes & Sync App with ArgoCD') {
+    steps {
+        script {
+            kubeconfig(credentialsId: 'kubeconfig') {
+                sh '''
+                kubectl get nodes
+                argocd login host.docker.internal:30120 --username admin --password $(kubectl get secret -n argocd argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d) --insecure
+                argocd app sync gitops-argocd
+                '''
             }
         }
+    }
+}
     }
 }
