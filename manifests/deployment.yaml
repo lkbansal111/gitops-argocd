@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: llmops-app
-        image: lavkushbansal/gitops-argocd:latest
+        image: lavkushbansal/gitops-argocd:v1
         ports:
         - containerPort: 8501
         env:
