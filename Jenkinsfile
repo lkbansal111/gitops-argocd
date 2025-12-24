@@ -3,7 +3,6 @@ pipeline {
     environment {
         DOCKER_HUB_REPO = "lavkushbansal/gitops-argocd"
         DOCKER_HUB_CREDENTIALS_ID = "dockerhub-token"
-        // IMAGE_TAG = "v${BUILD_NUMBER}"
     }
     stages {
         stage('Checkout Github') {
@@ -12,19 +11,14 @@ pipeline {
                 checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/lkbansal111/gitops-argocd.git']])
             }
         }        
-        stage('Build Docker Image') {
+        stage('Build & Push Docker Image') {
             steps {
                 script {
                     echo 'Building Docker image...'
                     def dockerImage = docker.build("${DOCKER_HUB_REPO}:v1")
-                }
-            }
-        }
-        stage('Push Image to DockerHub') {
-            steps {
-                script {
+                    
                     echo 'Pushing Docker image to DockerHub...'
-                    docker.withRegistry('https://registry.hub.docker.com' , "${DOCKER_HUB_CREDENTIALS_ID}") {
+                    docker.withRegistry('https://registry.hub.docker.com', "${DOCKER_HUB_CREDENTIALS_ID}") {
                         dockerImage.push('v1')
                     }
                 }
@@ -39,7 +33,6 @@ pipeline {
                 }
             }
         }
-
         stage('Commit Updated YAML') {
             steps {
                 script {
@@ -67,18 +60,18 @@ pipeline {
                 '''
             }
         }
-       stage('Apply Kubernetes & Sync App with ArgoCD') {
-    steps {
-        script {
-            kubeconfig(credentialsId: 'kubeconfig') {
-                sh '''
-                kubectl get nodes
-                argocd login host.docker.internal:30120 --username admin --password $(kubectl get secret -n argocd argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d) --insecure
-                argocd app sync gitops-argocd
-                '''
+        stage('Apply Kubernetes & Sync App with ArgoCD') {
+            steps {
+                script {
+                    kubeconfig(credentialsId: 'kubeconfig') {
+                        sh '''
+                        kubectl get nodes
+                        argocd login host.docker.internal:30120 --username admin --password $(kubectl get secret -n argocd argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d) --insecure
+                        argocd app sync gitops-argocd
+                        '''
+                    }
+                }
             }
         }
-    }
-}
     }
 }
